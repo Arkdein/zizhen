@@ -9,7 +9,7 @@
   const dstr = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
   const today = () => dstr(new Date());
   const DAY = 864e5;
-  const APP_V = 'zizhen-2026-10-22e';
+  const APP_V = 'zizhen-2026-10-22f';
   const CFG = window.ZZ_CONFIG || {};
   const API = /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(CFG.api || '') || /^http:\/\/localhost:\d+\//.test(CFG.api || '') ? CFG.api : '';
   const OBX = 'zizhen-outbox', FIXK = 'zizhen-fixes';

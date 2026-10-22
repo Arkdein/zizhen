@@ -1,5 +1,5 @@
 /* 字斟句酌 service worker: works offline after the first visit. Bump VERSION after editing any file. */
-const VERSION = 'zizhen-2026-10-22e';
+const VERSION = 'zizhen-2026-10-22f';
 const SHELL = ['./', 'index.html', 'css/app.css', 'css/fonts/zz-rare.woff2', 'js/parse.js', 'js/zz.js', 'js/app.js', 'data/config.js',
   'data/texts/taohua.js', 'data/texts/zouji.js', 'data/texts/mashuo.js', 'data/texts/zongqiu.js', 'data/texts/liujingting.js',
   'js/vendor/html2canvas.min.js', 'js/vendor/jspdf.umd.min.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
