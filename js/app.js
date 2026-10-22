@@ -41,7 +41,7 @@
     Object.keys(T.lex || {}).forEach(k => { if (!keys.includes(k)) keys.push(k); });
     const short = T.title.length > 5 ? T.title.slice(0, 2) : T.title;
     TX[tid] = { T, tid, sents, keys, short, cite: T.citeAs || (T.author ? T.author + '《' + T.title + '》' : '《' + T.title + '》') };
-    (T.recall || []).forEach(r => { r.tid = tid; ITEMS.push(r); ITEM[r.id] = r; });
+    (T.recall || []).forEach(r => { r.tid = tid; ITEM[r.id] = r; if (!r.off) ITEMS.push(r); });
   });
   const ALLKEYS = ORDER.flatMap(tid => TX[tid].keys.map(w => tid + ':' + w));
   const plainSent = S => S.toks.map(t => t.w).join('');

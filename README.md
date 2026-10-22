@@ -43,6 +43,7 @@ data/texts/<id>.js       ONE FILE PER TEXT: text, glosses, 白话, 考点 lexico
 tools/validate.js        checks a data file:  node tools/validate.js data/texts/taohua.js
 tools/smoke.py           browser smoke test (Playwright)
 SPEC-data.md             full data format
+REVIEW-NOTES.md          judgement calls left for the teacher (text versions, disputed glosses, marking tiers)
 sw.js                    offline cache — bump VERSION after any edit
 ```
 
@@ -69,7 +70,7 @@ Free-recall items:
   ans: { '2': ['就'], '1.5': [], '1': [] },
   model: '就', note: '…', ref: 'GCE A 2023' }
 ```
-`⟨ ⟩` wraps the dotted character. To add synonyms students keep writing, add them to `ans['2']`.
+`⟨ ⟩` wraps the dotted character. To add synonyms students keep writing, add them to `ans['2']`. Add `off: true` to hide an item without deleting it.
 
 Run the validator after editing (it checks the notation, that the text still reconstructs exactly, answer indices, and that every tested word really occurs in the prescribed text):
 
