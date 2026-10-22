@@ -30,14 +30,15 @@ On phones it opens the share sheet (Mail, Outlook, Teams…). Otherwise it downl
 
 Progress lives only in each student's browser (`localStorage`). There are no logins, no server and no personal data leaves the device. Clearing browser data resets progress, so remind students to export before changing phones.
 
-## 报错 · 答案候选 · 老师后台 (optional, needs a Google Sheet)
+## 报错 · 答案候选 · teacher dashboard (needs the Google Sheet)
 
 When `data/config.js` holds the Apps Script URL:
-- **报错:** students get a 报错 link on every gloss, MCQ and quiz item. Reports arrive anonymously in the Sheet.
+- **报错:** every gloss, MCQ and quiz item gets a 报错 link. Reports arrive anonymously in the Google Sheet `字斟句酌 后台`.
 - **答案候选:** when a student self-marks an answer the marker didn't recognise, that answer and the mark they gave themselves are sent anonymously. The PDF report also lists them under 答案库候选.
-- **老师后台** (`teacher.html`, passcode-protected): vet reports and candidate answers. You can fix a gloss, add an accepted answer at 2 / 1.5 / 1 marks, change a model answer, switch a question off, mark a report as handled or not accepted, and undo any fix. Fixes are stored in the Sheet and applied by every student's app the next time it opens; the data files are untouched. **复制修改清单给 Claude** copies the active fixes so they can be folded into `data/texts/` permanently and then undone in the dashboard.
+- **Live fixes:** every student's app reads the Sheet's `修改` tab when it opens and applies the active rows on top of `data/texts/`.
+- **Teacher dashboard:** a Claude artifact that reads and writes the Sheet through the teacher's own Google Sheets connection. There you can fix glosses, accept answers at 2 / 1.5 / 1, change model answers, switch questions off, set report status, and undo fixes. Fold active fixes into `data/texts/` from time to time, then undo them in the dashboard.
 
-Setup: `apps-script/README.md`. Test locally without Google: `python3 tools/mock_api.py 8767 test123`, set `api: 'http://localhost:8767/exec'`, then `python3 tools/e2e_cloud.py http://localhost:8766 http://localhost:8767 test123 out/`.
+Setup: `apps-script/README.md`. Test locally without Google: `python3 tools/mock_api.py 8767 test123`, set `api: 'http://localhost:8767/exec'`, then run `python3 tools/e2e_cloud.py http://localhost:8766 http://localhost:8767 test123 out/`.
 
 ## Files
 
@@ -48,9 +49,6 @@ js/app.js                engine: views, marking, mastery, XP/badges, PDF
 js/parse.js              token parser for the text notation (shared with tools/validate.js)
 js/zz.js                 data registry
 js/vendor/               html2canvas + jsPDF (MIT), bundled so the PDF works offline and behind school filters
-teacher.html             老师后台 (passcode; reads the Google Sheet)
-js/teacher.js            dashboard logic
-css/teacher.css          dashboard styles
 apps-script/             Google Apps Script backend + setup guide
 data/config.js           Apps Script URL (empty = 报错 and dashboard off)
 data/texts/<id>.js       ONE FILE PER TEXT: text, glosses, 白话, 考点 lexicon, MCQs, free-recall items  ← edit these
