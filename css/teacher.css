@@ -1,0 +1,40 @@
+/* 字斟句酌 · 老师后台 — builds on app.css tokens. Desk-first, works on a phone. */
+body.teacher { padding-bottom: 0; }
+.teacher main { max-width: 980px; }
+.t-badge { font-size: 13px; color: var(--ink-2); border: 1px solid var(--rule); border-radius: 12px; padding: 2px 10px; }
+.t-hd-actions { margin-left: auto; display: flex; gap: 8px; }
+.t-login { max-width: 420px; margin: 40px auto; background: var(--leaf); border: 1px solid var(--rule); border-radius: var(--r-m); padding: 24px 22px; }
+.t-login h1 { font-size: 24px; margin-bottom: 6px; }
+.t-login input[type="password"] { width: 100%; min-height: 46px; padding: 0 12px; border: 1px solid var(--rule); border-radius: var(--r-s); background: var(--paper); font-size: 16px; margin: 6px 0 10px; }
+.t-sum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: var(--r-m); overflow: hidden; margin-bottom: 18px; }
+.t-sum button { background: var(--leaf); border: 0; padding: 12px 14px; text-align: left; cursor: pointer; }
+.t-sum button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.t-sum button[aria-pressed="true"] span { color: var(--paper); }
+.t-sum b { display: block; font: 900 26px/1.2 var(--f-wen); }
+.t-sum span { font-size: 13px; color: var(--ink-3); }
+.t-bar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin: 0 0 14px; font-size: 14px; color: var(--ink-2); }
+.t-bar select { min-height: 36px; border: 1px solid var(--rule); border-radius: var(--r-s); background: var(--leaf); padding: 0 8px; }
+.t-list { display: grid; gap: 12px; }
+.t-card { background: var(--leaf); border: 1px solid var(--rule); border-radius: var(--r-m); padding: 14px 16px; }
+.t-card.done { opacity: .62; }
+.t-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; color: var(--ink-3); margin-bottom: 6px; }
+.t-meta .cat { color: var(--zhu); font-weight: 700; }
+.t-chip { display: inline-block; font-size: 12px; border-radius: 10px; padding: 1px 8px; background: var(--sunk); color: var(--ink-2); }
+.t-chip.new { background: var(--zhu-soft); color: var(--zhu); }
+.t-chip.ok { background: var(--lv-soft); color: var(--lv); }
+.t-s { font: 400 19px/1.8 var(--f-wen); margin: 2px 0 6px; }
+.t-kv { font-size: 14px; margin: 3px 0; }
+.t-kv b { color: var(--ink-3); font-weight: 500; margin-right: 6px; }
+.t-kv .wen { font-size: 16px; }
+.t-msg { font-size: 15px; background: var(--huang-soft); border-radius: var(--r-s); padding: 6px 10px; margin: 6px 0; }
+.t-act { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
+.t-edit { display: grid; gap: 8px; margin-top: 10px; padding: 12px; background: var(--sunk); border-radius: var(--r-s); }
+.t-edit label { font-size: 13px; color: var(--ink-3); }
+.t-edit input, .t-edit select { width: 100%; min-height: 42px; padding: 0 10px; border: 1px solid var(--rule); border-radius: var(--r-s); background: var(--leaf); font-size: 16px; }
+.t-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.t-row input { flex: 1 1 200px; width: auto; }
+.t-empty { text-align: center; color: var(--ink-3); padding: 40px 16px; }
+.t-count { font: 900 22px/1 var(--f-wen); color: var(--zhu); margin-right: 4px; }
+.t-dist { font-size: 13px; color: var(--ink-2); }
+.t-help { font-size: 13px; color: var(--ink-3); margin: -6px 0 14px; }
+@media (max-width: 560px) { .t-sum b { font-size: 22px; } .t-sum button { padding: 10px; } }

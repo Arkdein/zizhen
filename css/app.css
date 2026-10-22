@@ -373,6 +373,20 @@ legend { font-size: 13px; color: var(--ink-3); margin-bottom: 6px; padding: 0; }
 .rb .ok { color: #3B7656; font-weight: 700; } .rb .bad { color: #B3301E; font-weight: 700; }
 .rb .glance p { margin: 4px 0; }
 
+/* 报错 dialog */
+.ov { position: fixed; inset: 0; z-index: 70; background: rgba(20, 22, 26, .45); display: flex; align-items: flex-end; justify-content: center; padding: 0; }
+.ov[hidden] { display: none; }
+.ov-card { width: 100%; max-width: 520px; max-height: 88vh; overflow: auto; background: var(--leaf); border-radius: 14px 14px 0 0; padding: 20px 18px calc(18px + env(safe-area-inset-bottom)); }
+@media (min-width: 760px) { .ov { align-items: center; } .ov-card { border-radius: var(--r-m); } }
+.ov-card h2 { font-size: 20px; margin-bottom: 8px; }
+.ov-ctx { font-size: 14px; color: var(--ink-2); background: var(--sunk); border-radius: var(--r-s); padding: 10px 12px; margin: 0 0 6px; }
+.ov-ctx .wen { font-size: 17px; color: var(--ink); }
+.ov-l { display: block; font-size: 13px; color: var(--ink-3); margin: 4px 0 6px; }
+.ov-card textarea { width: 100%; padding: 10px; border: 1px solid var(--rule); border-radius: var(--r-s); background: var(--paper); font-size: 16px; resize: vertical; }
+.linkbtn { background: none; border: 0; padding: 6px 0; color: var(--ink-3); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; min-height: 32px; }
+.linkbtn:hover { color: var(--zhu); }
+.rep-line { margin: 8px 0 0; }
+
 /* toast */
 #toast { position: fixed; left: 50%; bottom: calc(var(--tab-h) + 16px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 60; background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 22px; font-size: 14px; box-shadow: 0 6px 20px rgba(0, 0, 0, .2); max-width: calc(100vw - 32px); white-space: nowrap; }
 @media (min-width: 760px) { #toast { bottom: auto; top: 68px; } }

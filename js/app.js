@@ -9,6 +9,10 @@
   const dstr = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
   const today = () => dstr(new Date());
   const DAY = 864e5;
+  const APP_V = 'zizhen-2026-10-22e';
+  const CFG = window.ZZ_CONFIG || {};
+  const API = /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(CFG.api || '') || /^http:\/\/localhost:\d+\//.test(CFG.api || '') ? CFG.api : '';
+  const OBX = 'zizhen-outbox', FIXK = 'zizhen-fixes';
   const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const hash = s => { let h = 2166136261; for (const c of s) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
   const marked = s => esc(s).replace(/⟨([^⟩]+)⟩/g, '<span class="dot">$1</span>');
@@ -43,6 +47,7 @@
     TX[tid] = { T, tid, sents, keys, short, cite: T.citeAs || (T.author ? T.author + '《' + T.title + '》' : '《' + T.title + '》') };
     (T.recall || []).forEach(r => { r.tid = tid; ITEM[r.id] = r; if (!r.off) ITEMS.push(r); });
   });
+  ORDER.forEach(tid => (TX[tid].T.mcq || []).forEach((q, i) => { q.id = tid + '-mcq-' + (i + 1); }));
   const ALLKEYS = ORDER.flatMap(tid => TX[tid].keys.map(w => tid + ':' + w));
   const plainSent = S => S.toks.map(t => t.w).join('');
   const sentWithDot = (S, ti) => S.toks.map((t, i) => i === ti ? '<span class="dot">' + esc(t.w) + '</span>' : esc(t.w)).join('');
@@ -321,11 +326,14 @@
       h += '<h4>五篇课文里的“' + esc(t.w) + '”</h4><ul class="xref">' + others.slice(0, 8).map(o => { const S2 = TX[o.tid].sents[o.sid], t2 = S2.toks[o.ti];
         return '<li><a href="#read/' + o.tid + '/' + o.sid + ':' + o.ti + '" data-x="' + o.tid + '|' + o.sid + ':' + o.ti + '"><span class="wen">' + sentWithDot(S2, o.ti) + '</span></a><br><span class="t">《' + esc(TX[o.tid].T.title) + '》</span> ' + esc(t2.g) + '</li>'; }).join('') + '</ul>' + (others.length > 8 ? '<p class="fine">还有 ' + (others.length - 8) + ' 处</p>' : '');
     }
-    h += '<div class="note-nav"><button class="btn sm" data-nav="-1">‹ 上一词</button><button class="btn sm" data-nav="1">下一词 ›</button><button class="btn sm" data-nav="k">下一个考点</button></div></div>';
+    h += '<div class="note-nav"><button class="btn sm" data-nav="-1">‹ 上一词</button><button class="btn sm" data-nav="1">下一词 ›</button><button class="btn sm" data-nav="k">下一个考点</button></div>' +
+      (API ? '<p class="rep-line"><button class="linkbtn" data-rep="gloss" data-at="' + tid + ':' + sid + ':' + ti + '">释义有问题？报错</button></p>' : '') + '</div>';
     return h;
   }
   function bindNote(root) {
     $$('[data-nav]', root).forEach(b => b.onclick = () => stepWord(b.dataset.nav));
+    $$('[data-rep="gloss"]', root).forEach(b => b.onclick = () => { const [tid, sid, ti] = b.dataset.at.split(':'); const Sx = TX[tid].sents[+sid], t = Sx.toks[+ti];
+      openReport({ where: '释义', tid, w: t.w, s: plainSent(Sx), cur: t.g + (t.f.n ? '（' + t.f.n + '）' : ''), ref: { type: 'gloss', at: tid + ':' + sid + ':' + ti }, cats: ['释义有误', '注释或拼音有误', '原文有错字', '其他'] }); });
     $$('[data-x]', root).forEach(a => a.onclick = e => { const [tid, at] = a.dataset.x.split('|'); if (tid === RD.tid) { e.preventDefault(); openWord(at); const el = $('#text [data-i="' + at + '"]'); if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } });
   }
   function stepWord(dir) {
@@ -342,10 +350,10 @@
   function mcqKey(tid, q) { const m = (q.s || (q.o && q.o[q.a] && q.o[q.a].s) || '').match(/⟨([^⟩]+)⟩/); return m && TX[tid].T.lex[m[1]] ? tid + ':' + m[1] : null; }
   function startMCQ(tid) {
     const all = TX[tid].T.mcq || [];
-    if (!all.length) { $('#main').innerHTML = '<div class="col"><p>这篇课文的测一测题目还在整理中。</p><a class="btn" href="#read/' + tid + '">返回课文</a></div>'; return; }
+    if (!all.some(q => !q.off)) { $('#main').innerHTML = '<div class="col"><p>这篇课文的测一测题目还在整理中。</p><a class="btn" href="#read/' + tid + '">返回课文</a></div>'; return; }
     // prefer questions on weak / due words, then random
     const sc = q => { const k = mcqKey(tid, q); return (k ? (isDue(k) ? 0 : level(k) < 3 ? 1 : 2) : 1.5) + Math.random(); };
-    const pick = all.map((q, i) => ({ i, s: sc(q) })).sort((a, b) => a.s - b.s).slice(0, Math.min(S.prefs.n || 10, all.length)).map(x => x.i);
+    const pick = all.map((q, i) => ({ i, q, s: sc(q) })).filter(x => !x.q.off).sort((a, b) => a.s - b.s).slice(0, Math.min(S.prefs.n || 10, all.length)).map(x => x.i);
     sess = { kind: 'mcq', tid, qs: shuffle(pick), i: 0, res: [], order: null };
     renderMCQ();
   }
@@ -365,7 +373,7 @@
       '<ul class="opts">' + sess.order.map((oi, j) => {
         let cls = ''; if (done) { if (oi === q.a) cls = ' ok'; else if (oi === r.pick) cls = ' bad'; }
         return '<li><button class="opt' + cls + '" data-o="' + oi + '"' + (done ? ' disabled' : '') + '><span class="L">' + 'ABCD'[j] + '</span>' + optHTML(q, q.o[oi]) + '</button></li>'; }).join('') + '</ul>' +
-      (done ? '<div class="fb ' + (r.ok ? 'ok' : 'bad') + '" role="status"><h3>' + (r.ok ? '答对了' : '答错了，正确答案是 ' + 'ABCD'[sess.order.indexOf(q.a)]) + '</h3><p>' + esc(q.why) + '</p></div><div class="actions"><button class="btn primary" id="mq-next">' + (sess.i + 1 < sess.qs.length ? '下一题' : '看结果') + '</button></div>' : '') + '</div>';
+      (done ? '<div class="fb ' + (r.ok ? 'ok' : 'bad') + '" role="status"><h3>' + (r.ok ? '答对了' : '答错了，正确答案是 ' + 'ABCD'[sess.order.indexOf(q.a)]) + '</h3><p>' + esc(q.why) + '</p>' + (API ? '<p class="rep-line"><button class="linkbtn" data-rep="mcq">这题有问题？报错</button></p>' : '') + '</div><div class="actions"><button class="btn primary" id="mq-next">' + (sess.i + 1 < sess.qs.length ? '下一题' : '看结果') + '</button></div>' : '') + '</div>';
     $('#mq-back').onclick = () => go('read/' + sess.tid);
     if (!done) $$('.opt').forEach(b => b.onclick = () => {
       const pick = +b.dataset.o, ok = pick === q.a;
@@ -374,7 +382,10 @@
       S.cnt.mcq++; bump(); addXP(ok ? 5 : 1); save(); renderMCQ();
       const n = $('#mq-next'); if (n) n.focus();
     });
-    else $('#mq-next').onclick = () => { sess.i++; sess.order = null; if (sess.i < sess.qs.length) renderMCQ(); else endMCQ(); };
+    else {
+      $('#mq-next').onclick = () => { sess.i++; sess.order = null; if (sess.i < sess.qs.length) renderMCQ(); else endMCQ(); };
+      const rb = $('[data-rep="mcq"]'); if (rb) rb.onclick = () => openReport({ where: '选择题', tid: sess.tid, w: (String(q.s || q.q).match(/⟨([^⟩]+)⟩/) || [])[1] || '', s: plainM(qSummary(q)), cur: '答案：' + plainM(optPlain(q, q.o[q.a])), ans: plainM(optPlain(q, q.o[r.pick])), ref: { type: 'mcq', id: q.id, type2: q.type }, cats: ['答案有误', '选项或解析有误', '题目有错字', '其他'] });
+    }
   }
   function mcqCite(X, src) { if (!src || src === X.T.title || src === X.cite) return X.cite; return /《/.test(src) ? src : '《' + src + '》'; }
   function qSummary(q) { return q.type === '释义' ? q.s : q.q; }
@@ -467,7 +478,7 @@
           '<button data-self="' + idx + '" data-m="1"><b>1 分</b>只答对了一部分，或说得太笼统</button>' +
           '<button data-self="' + idx + '" data-m="0"><b>0 分</b>意思不对</button></div>';
       }
-      h += '<p class="rule-note">自评的题会在学习记录里标出，老师可以复核。</p></div>';
+      h += '<p class="rule-note">自评的题会在学习记录里标出，老师可以复核。' + (API ? '你的答案和自评分也会匿名发给老师，用来完善答案库。' : '') + '</p>' + (API ? '<p class="rep-line"><button class="linkbtn" data-rep="item" data-idx="' + idx + '">参考答案有问题？报错</button></p>' : '') + '</div>';
       return h;
     }
     const full = r.mark >= 2;
@@ -475,7 +486,7 @@
       '<p>参考答案：<span class="model">' + esc(it.model) + '</span></p>' +
       ((it.ans['1.5'] || []).length || (it.ans['1'] || []).length ? '<p class="acc">' + ((it.ans['1.5'] || []).length ? '1.5 分：' + esc(it.ans['1.5'].join(' ／ ')) + '　' : '') + ((it.ans['1'] || []).length ? '1 分：' + esc(it.ans['1'].join(' ／ ')) : '') + '</p>' : '') +
       (it.note ? '<p>' + esc(it.note) + '</p>' : '') +
-      '<p class="link">考点出自' + esc(X.cite) + '：<span class="wen">' + marked(it.link) + '</span>' + (it.kind === 'out' ? '　本句出自 ' + esc(it.src) + '（课外）' : '') + '　<a href="#read/' + it.tid + '/' + encodeURIComponent(it.w) + '">到课文里看</a></p></div>';
+      '<p class="link">考点出自' + esc(X.cite) + '：<span class="wen">' + marked(it.link) + '</span>' + (it.kind === 'out' ? '　本句出自 ' + esc(it.src) + '（课外）' : '') + '　<a href="#read/' + it.tid + '/' + encodeURIComponent(it.w) + '">到课文里看</a></p>' + (API ? '<p class="rep-line"><button class="linkbtn" data-rep="item" data-idx="' + idx + '">' + (full ? '这题有问题？报错' : '我的答案也应该算对？报错') + '</button></p>' : '') + '</div>';
     return h;
   }
   function resolve(idx, mark, how) {
@@ -483,6 +494,7 @@
     r.mark = mark; r.how = how;
     practise(itemKey(it), mark >= 1.5);
     S.cnt.recall++; if (it.kind === 'out' && mark >= 2) S.cnt.outOk++;
+    if (how === 'self' && r.ans) queueCand({ id: it.id, tid: it.tid, w: it.w, ans: r.ans.slice(0, 100), norm: nrm(r.ans).slice(0, 100), self: mark });
     bump(); addXP(Math.round(mark * 5) || 1); save();
   }
   function renderQuiz() {
@@ -522,6 +534,9 @@
     }
     const sk = $('#qz-skip'); if (sk) sk.onclick = () => { qz.res[qz.i] = { ans: '', status: 'blank', mark: 0, how: 'blank' }; resolve(qz.i, 0, 'blank'); renderQuiz(); };
     $$('[data-self]').forEach(b => b.onclick = () => { resolve(+b.dataset.self, +b.dataset.m, 'self'); renderQuiz(); focusFb(); });
+    $$('[data-rep="item"]').forEach(b => b.onclick = () => { const i = +b.dataset.idx, it = ITEM[qz.items[i]], r = qz.res[i] || {};
+      openReport({ where: '测验题', tid: it.tid, w: it.w, s: plainM(it.s), cur: '参考答案：' + it.model + '；满分写法：' + (it.ans['2'] || []).join('／'), ans: r.ans || '', ref: { type: 'item', id: it.id, src: it.src },
+        cats: r.mark != null && r.mark < 2 ? ['我的答案也应该算对', '参考答案有误', '句子或出处有误', '其他'] : ['参考答案有误', '我的答案也应该算对', '句子或出处有误', '其他'] }); });
     const nx = $('#qz-next'); if (nx) { nx.onclick = () => { if (qz.i + 1 < qz.items.length) { qz.i++; renderQuiz(); } else { finishQuiz(); renderQuizResult(); } }; }
     const ag = $('#qz-again'); if (ag) ag.onclick = startMock;
   }
@@ -562,7 +577,7 @@
       '<h2 class="sec-h">设置</h2><fieldset><legend>外观</legend>' + [['auto', '跟随系统'], ['light', '浅色'], ['dark', '深色']].map(([v, l]) => '<label class="radio"><input type="radio" name="th" value="' + v + '"' + (S.prefs.theme === v ? ' checked' : '') + '>' + l + '</label>').join('') + '</fieldset>' +
       '<div class="field"><span>姓名与班级（只用在 PDF 上）</span><div class="form-row"><label for="pf-n">姓名</label><input id="pf-n" value="' + esc(S.profile.name) + '"><label for="pf-c">班级</label><input id="pf-c" value="' + esc(S.profile.cls) + '"></div></div>' +
       '<div class="actions"><button class="btn ghost danger" id="rs">清除这台设备上的全部进度</button></div><div id="rs-z"></div>' +
-      '<h2 class="sec-h">关于</h2><p class="fine">课文版本与释义以本校华文部《学习单》（教师版）、白话注释与练习答案为准，并参考《古汉语常用字字典》、教材注释、汉典与古诗文网。测验仿新加坡剑桥 A 水准 H2 华文与文学（9575）试卷三 A组 1(a)；评分方式参照 2022—2025 年评分指引。课外例句均已核对出处。发现错误，请告诉老师。</p></div>';
+      '<h2 class="sec-h">关于</h2><p class="fine">课文版本与释义以本校华文部《学习单》（教师版）、白话注释与练习答案为准，并参考《古汉语常用字字典》、教材注释、汉典与古诗文网。测验仿新加坡剑桥 A 水准 H2 华文与文学（9575）试卷三 A组 1(a)；评分方式参照 2022—2025 年评分指引。课外例句均已核对出处。发现错误，请告诉老师。' + (API ? '按「报错」发送的意见，以及测验中自评的答案，会匿名发送给老师（不含姓名和班级），用来改进释义和答案库。' : '') + '</p></div>';
     $$('input[name="th"]').forEach(r => r.onchange = () => { S.prefs.theme = r.value; save(); applyTheme(); });
     $('#pf-n').onchange = $('#pf-c').onchange = () => { S.profile.name = $('#pf-n').value.trim(); S.profile.cls = $('#pf-c').value.trim(); save(); };
     $('#rs').onclick = () => { $('#rs-z').innerHTML = '<div class="msg err"><p>确定清除？等级、徽章和全部记录都会删除，无法恢复。建议先导出 PDF。</p><div class="actions"><button class="btn" id="rs-n">取消</button><button class="btn zhu" id="rs-y">清除</button></div></div>'; $('#rs-n').onclick = () => { $('#rs-z').innerHTML = ''; }; $('#rs-y').onclick = () => { const keep = { profile: S.profile, prefs: S.prefs }; S = Object.assign(DEF(), keep); save(); paintHead(); renderRecords(); toast('进度已清除'); }; };
@@ -630,6 +645,11 @@
           l.items.map(x => '<tr><td class="wen">' + markedU(x.s) + '</td><td>' + esc(x.src) + (x.kind === 'out' ? '<br><small>考点：《' + esc(TX[x.tid] ? TX[x.tid].T.title : '') + '》</small>' : '') + '</td><td class="wen">' + esc(x.ans || '（未作答）') + '</td><td class="' + (x.mark >= 2 ? 'ok' : 'bad') + '">' + markStr(x.mark) + (x.how === 'self' ? ' <span class="self">自评</span>' : '') + '</td><td class="wen">' + esc(x.model) + '</td></tr>').join('') + '</tbody></table>');
       });
     }
+    const selfs = ri.filter(x => x.how === 'self' && x.ans);
+    if (selfs.length) {
+      B.push('<div class="sec">答案库候选（学生自评、系统未收录的答案）</div><table><thead><tr><th>课文</th><th>字词</th><th>学生答案</th><th>自评</th><th>参考答案</th></tr></thead><tbody>' +
+        selfs.map(x => '<tr><td class="wen">《' + esc(TX[x.tid] ? TX[x.tid].short : x.tid) + '》</td><td class="wen">' + esc(x.w) + '</td><td class="wen">' + esc(x.ans) + '</td><td class="self">' + markStr(x.mark) + '</td><td class="wen">' + esc(x.model) + '</td></tr>').join('') + '</tbody></table>');
+    }
     if (mc.length) {
       B.push('<div class="sec">测一测（选择题）</div><table><thead><tr><th>时间</th><th>课文</th><th>得分</th><th>答错的题</th></tr></thead><tbody>' + mc.map(l => '<tr><td>' + fmtDT(l.t) + '</td><td class="wen">《' + esc(TX[l.tid] ? TX[l.tid].T.title : l.tid) + '》</td><td>' + l.score + ' / ' + l.max + '</td><td class="wen">' + (l.items.filter(x => !x.ok).map(x => markedU(x.s) + '<br><small>正确：' + markedU(x.ans) + '；选了：' + markedU(x.pick) + '</small>').join('<br>') || '—') + '</td></tr>').join('') + '</tbody></table>');
     }
@@ -664,8 +684,93 @@
     return doc.output('blob');
   }
 
+  /* ================= cloud: 报错, answer candidates, live fixes (only when data/config.js has an api url) ================= */
+  function openReport(o) {
+    const ov = $('#ov');
+    ov.innerHTML = '<div class="ov-card" role="dialog" aria-modal="true" aria-labelledby="rp-t"><h2 id="rp-t">报错</h2>' +
+      '<p class="ov-ctx"><span class="wen">' + esc(o.s) + '</span><br><span class="fine">《' + esc(TX[o.tid] ? TX[o.tid].T.title : o.tid) + '》 · ' + esc(o.where) + (o.w ? ' · ' + esc(o.w) : '') + '</span><br>现在的内容：' + esc(o.cur) + (o.ans ? '<br>你的答案：' + esc(o.ans) : '') + '</p>' +
+      '<form id="rp-f"><fieldset><legend>哪里有问题？</legend>' + o.cats.map((c, i) => '<label class="radio"><input type="radio" name="cat" value="' + esc(c) + '"' + (i ? '' : ' checked') + '>' + esc(c) + '</label>').join('') + '</fieldset>' +
+      '<label class="ov-l" for="rp-m">说明（可不填）</label><textarea id="rp-m" rows="3" maxlength="300" placeholder="例如：应该是“沿着”，不是“边缘”"></textarea>' +
+      '<p class="fine">匿名发送，不会附上你的姓名和班级。老师核实后会修改。</p><div class="actions"><button type="button" class="btn ghost" id="rp-x">取消</button><button type="submit" class="btn primary">发送</button></div></form></div>';
+    ov.hidden = false;
+    const close = () => { ov.hidden = true; ov.innerHTML = ''; };
+    $('#rp-x').onclick = close; ov.onclick = e => { if (e.target === ov) close(); };
+    setTimeout(() => { const f = $('input[name="cat"]', ov); if (f) f.focus(); }, 30);
+    $('#rp-f').onsubmit = e => {
+      e.preventDefault();
+      const cat = ($('input[name="cat"]:checked', ov) || {}).value || '', msg = $('#rp-m').value.trim();
+      if (cat === '其他' && !msg) { $('#rp-m').focus(); $('#rp-m').placeholder = '选了“其他”，请写一句说明'; return; }
+      outbox({ kind: 'report', where: o.where, tid: o.tid, w: o.w, s: o.s, cur: o.cur, ans: o.ans || '', cat, msg, ref: o.ref, v: APP_V });
+      close(); toast('已匿名发送给老师，谢谢！');
+    };
+  }
+  function readBox() { try { return JSON.parse(localStorage.getItem(OBX) || '[]'); } catch (e) { return []; } }
+  function writeBox(q) { try { localStorage.setItem(OBX, JSON.stringify(q.slice(-60))); } catch (e) { /* full */ } }
+  function outbox(p) { if (!API) return; const q = readBox(); q.push(p); writeBox(q); flushSoon(0); }
+  function queueCand(c) { if (!API) return; const q = readBox(); const last = q[q.length - 1]; if (last && last.kind === 'cand' && last.items.length < 30) last.items.push(c); else q.push({ kind: 'cand', items: [c] }); writeBox(q); flushSoon(4000); }
+  let flushT = 0, flushing = false;
+  function flushSoon(ms) { clearTimeout(flushT); flushT = setTimeout(flush, ms); }
+  async function flush() {
+    if (!API || flushing || !navigator.onLine) return;
+    flushing = true;
+    try {
+      let q = readBox();
+      while (q.length) {
+        const p = q[0];
+        let ok = false;
+        try { const r = await fetch(API, { method: 'POST', body: JSON.stringify(p) }); const j = await r.json(); ok = !!(j && (j.ok || /bad|unknown|no items/.test(j.error || ''))); } catch (e) { ok = false; }
+        if (!ok) break;
+        q = readBox(); q.shift(); writeBox(q);
+      }
+    } finally { flushing = false; }
+  }
+  window.addEventListener('online', () => flushSoon(1000));
+  async function loadFixes() {
+    let cached = null; try { cached = JSON.parse(localStorage.getItem(FIXK) || 'null'); } catch (e) { /* none */ }
+    if (!API) return [];
+    try {
+      const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 1800);
+      const r = await fetch(API + (API.indexOf('?') < 0 ? '?' : '&') + 'a=fixes', { signal: ctl.signal }); clearTimeout(tm);
+      const j = await r.json();
+      if (j && j.ok && Array.isArray(j.fixes)) { try { localStorage.setItem(FIXK, JSON.stringify({ t: Date.now(), fixes: j.fixes })); } catch (e) { /* full */ } return j.fixes; }
+    } catch (e) { /* offline or slow: use the last copy */ }
+    return cached && Array.isArray(cached.fixes) ? cached.fixes : [];
+  }
+  function applyFixes(list) {
+    const MCQ = {}; ORDER.forEach(tid => (TX[tid].T.mcq || []).forEach(q => { MCQ[q.id] = q; }));
+    let n = 0;
+    (list || []).forEach(f => {
+      const d = f.data || {};
+      try {
+        if (f.type === 'gloss') {
+          const [tid, sid, ti] = String(f.target).split(':'); const X = TX[tid]; const t = X && X.sents[+sid] && X.sents[+sid].toks[+ti];
+          if (!t || t.w !== d.w) return;
+          if (d.g) t.g = String(d.g); if (d.n != null) t.f.n = String(d.n); n++;
+        } else if (f.type === 'off') {
+          if (ITEM[f.target]) { ITEM[f.target].off = true; const i = ITEMS.indexOf(ITEM[f.target]); if (i >= 0) ITEMS.splice(i, 1); n++; }
+          else if (MCQ[f.target]) { MCQ[f.target].off = true; n++; }
+        } else {
+          const it = ITEM[f.target]; if (!it) return;
+          if (f.type === 'ans') {
+            (d.remove || []).forEach(a => ['2', '1.5', '1'].forEach(k => { it.ans[k] = (it.ans[k] || []).filter(x => nrm(x) !== nrm(a)); }));
+            const k = ['2', '1.5', '1'].indexOf(String(d.tier)) >= 0 ? String(d.tier) : '2';
+            (d.add || []).forEach(a => { if (!a) return; ['2', '1.5', '1'].forEach(t2 => { it.ans[t2] = (it.ans[t2] || []).filter(x => nrm(x) !== nrm(a)); }); it.ans[k] = (it.ans[k] || []).concat([String(a)]); });
+          } else if (f.type === 'model') { if (d.model) it.model = String(d.model); }
+          else if (f.type === 'note') { it.note = String(d.note || ''); }
+          n++;
+        }
+      } catch (e) { /* skip a malformed fix */ }
+    });
+    return n;
+  }
+
   /* ================= boot ================= */
-  paintHead();
-  route();
-  window.ZZapp = { autoMark, splitAns, state: () => S };
+  (async () => {
+    const fx = await loadFixes();
+    applyFixes(fx);
+    paintHead();
+    route();
+    flushSoon(2500);
+  })();
+  window.ZZapp = { autoMark, splitAns, state: () => S, applyFixes };
 })();

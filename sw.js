@@ -1,6 +1,6 @@
 /* 字斟句酌 service worker: works offline after the first visit. Bump VERSION after editing any file. */
-const VERSION = 'zizhen-2026-10-22d';
-const SHELL = ['./', 'index.html', 'css/app.css', 'css/fonts/zz-rare.woff2', 'js/parse.js', 'js/zz.js', 'js/app.js',
+const VERSION = 'zizhen-2026-10-22e';
+const SHELL = ['./', 'index.html', 'css/app.css', 'css/fonts/zz-rare.woff2', 'js/parse.js', 'js/zz.js', 'js/app.js', 'data/config.js',
   'data/texts/taohua.js', 'data/texts/zouji.js', 'data/texts/mashuo.js', 'data/texts/zongqiu.js', 'data/texts/liujingting.js',
   'js/vendor/html2canvas.min.js', 'js/vendor/jspdf.umd.min.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
