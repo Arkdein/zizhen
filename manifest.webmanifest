@@ -1,0 +1,16 @@
+{
+  "name": "字斟句酌 · 文言字词",
+  "short_name": "字斟句酌",
+  "description": "H2 华文与文学 A组古文：五篇指定古文逐字释义、一词多义与 1(a) 字词测验。",
+  "lang": "zh-Hans",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#EDEEEA",
+  "theme_color": "#EDEEEA",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
